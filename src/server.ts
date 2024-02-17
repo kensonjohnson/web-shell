@@ -1,8 +1,12 @@
 import express from "express";
+import bodyParser from "body-parser";
+import cors from "cors";
+// import asyncHandler from "express-async-handler";
 import { chdir } from "node:process";
 
 // Import controllers
-import { helloController } from "./controllers/root-controller.ts";
+import { helloController } from "./controllers/root-controller.js";
+import { runCommandController } from "./controllers/run-controller.js";
 
 // Setup express
 const app = express();
@@ -14,9 +18,14 @@ if (process.env.NODE_ENV === "dev") {
 }
 
 // Configure middleware
+app.use(cors());
 app.use(express.static("frontend")); // Bring in the built client
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use(bodyParser.json());
 
 app.get("/hello", helloController);
+
+app.post("/run", runCommandController);
 
 app.listen(port, () => {
   console.log(`Example app listening at http://localhost:${port}/`);
