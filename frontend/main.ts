@@ -4,18 +4,7 @@
 
 const OPTIONS_SELECT_ID = "options-select";
 
-const COMMAND_OPTIONS_MAP = {
-  ls: {
-    l: "Detailed list",
-    a: "Show hidden files",
-    p: "Add / to end of directories",
-    G: "Colorize output",
-  },
-  cat: {
-    n: "Add number lines",
-    s: "Remove extra spaces",
-  },
-};
+import { COMMAND_OPTIONS_MAP, Option } from "./constants";
 
 // **********************************
 // * Generate Form and Options
@@ -32,7 +21,7 @@ createCommandSelectElement(
 );
 
 // Create select for command options
-createOptionsSelectElement(COMMAND_OPTIONS_MAP.ls, form);
+createOptionsSelectElement(COMMAND_OPTIONS_MAP.ls.options, form);
 
 const submitButton = document.createElement("button");
 submitButton.type = "submit";
@@ -69,7 +58,7 @@ function createCommandSelectElement(
 }
 
 function createOptionsSelectElement(
-  options: Record<string, string>,
+  options: Record<string, Option>,
   form: HTMLFormElement
 ) {
   const optionsSelect = document.createElement("select");
@@ -78,7 +67,7 @@ function createOptionsSelectElement(
   optionsSelect.multiple = true;
   optionsSelect.size = 0;
 
-  Object.entries(options).forEach(([option, description]) => {
+  Object.entries(options).forEach(([option, { description }]) => {
     const optionElement = document.createElement("option");
     optionElement.value = option;
     optionsSelect.size += 1;
@@ -89,12 +78,12 @@ function createOptionsSelectElement(
   form.appendChild(optionsSelect);
 }
 
-function renderOptions(options: Record<string, string>, elementId: string) {
+function renderOptions(options: Record<string, Option>, elementId: string) {
   const optionsSelect = document.getElementById(elementId) as HTMLSelectElement;
   if (!optionsSelect) return;
   optionsSelect.size = 0;
   optionsSelect.innerHTML = "";
-  Object.entries(options).forEach(([option, description]) => {
+  Object.entries(options).forEach(([option, { description }]) => {
     const optionElement = document.createElement("option");
     optionElement.value = option;
     optionsSelect.size += 1;
@@ -107,7 +96,7 @@ function renderOptions(options: Record<string, string>, elementId: string) {
 // * Event Handlers
 // **********************************
 
-function handleSubmit(event: SubmitEvent) {
+async function handleSubmit(event: SubmitEvent) {
   event.preventDefault();
   if (!event.target) return;
   const formRef = event.target as HTMLFormElement;
@@ -115,8 +104,20 @@ function handleSubmit(event: SubmitEvent) {
   const command = formData.get("command");
   const options = formData.getAll("option");
   if (!command) return;
-  // fetch(`http://localhost:3000/run?command=${command}`);
-  console.log({ command, options });
+  const body = {
+    command,
+    options,
+  };
+
+  const result = await fetch("/run", {
+    method: "post",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+  });
+  const data = await result.json();
+  console.log({ data });
 }
 
 function handleCommandOptionChange(event: Event) {
@@ -125,5 +126,5 @@ function handleCommandOptionChange(event: Event) {
   if (!command) return;
   const options =
     COMMAND_OPTIONS_MAP[command as keyof typeof COMMAND_OPTIONS_MAP];
-  renderOptions(options, OPTIONS_SELECT_ID);
+  renderOptions(options.options, OPTIONS_SELECT_ID);
 }

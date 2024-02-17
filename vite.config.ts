@@ -1,7 +1,8 @@
+import { defineConfig } from "vite";
 import { join } from "node:path";
 import { cwd } from "node:process";
 
-export default {
+export default defineConfig({
   root: join(cwd(), "frontend"),
   build: {
     outDir: join(cwd(), "build/frontend"),
@@ -18,6 +19,7 @@ export default {
 
       // Shorthand for proxying to specific endpoint
       "/hello": "http://localhost:3000",
+      "/run": "http://localhost:3000",
     },
   },
-};
+});
