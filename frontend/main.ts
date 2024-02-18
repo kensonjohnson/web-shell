@@ -50,6 +50,17 @@ form.appendChild(submitButton);
 document.body.appendChild(form);
 
 // **********************************
+// * Create Output Container
+// **********************************
+
+const outputContainer = document.createElement("div");
+outputContainer.id = "output-container";
+const header = document.createElement("h2");
+header.textContent = "Run command to see output here...";
+outputContainer.appendChild(header);
+document.body.appendChild(outputContainer);
+
+// **********************************
 // * Helper Functions
 // **********************************
 
