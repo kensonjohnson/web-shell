@@ -45,6 +45,28 @@ form {
   max-width: 320px;
 }
 
+#command-arguments {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5em;
+}
+
+#input-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5em;
+}
+
+code {
+  font-family: Menlo, Monaco, Consolas, "Liberation Mono", "Courier New",
+    monospace;
+  font-size: 0.9em;
+  padding: 0.2em 0.4em;
+  background-color: #1a1a1a;
+  border-radius: 4px;
+  color: orange;
+}
+
 button {
   border-radius: 8px;
   border: 1px solid transparent;
