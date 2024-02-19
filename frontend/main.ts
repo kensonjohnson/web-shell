@@ -149,6 +149,11 @@ function renderOptions(command: Command, elementId: string) {
     optionElement.textContent = `-${option} ${description}`;
     optionsSelect.appendChild(optionElement);
   });
+
+  // Handle case where no options are available
+  if (optionsSelect.size === 0) {
+    optionsSelect.size = 1;
+  }
 }
 
 function renderArguments(
@@ -213,6 +218,18 @@ function renderInputs(event: Event, optionsMap: Record<string, Option>) {
   });
 }
 
+function renderOutput(output: string[]) {
+  const outputContainer = document.getElementById("output-container");
+  if (!outputContainer) return;
+  outputContainer.innerHTML = "";
+  const header = document.createElement("h2");
+  header.textContent = "Command Output:";
+  outputContainer.appendChild(header);
+  const pre = document.createElement("pre");
+  pre.textContent = output.join("\n");
+  outputContainer.appendChild(pre);
+}
+
 // **********************************
 // * Event Handlers
 // **********************************
@@ -229,19 +246,32 @@ async function handleSubmit(event: SubmitEvent) {
   if (!command) return;
   const body = {
     command,
-    options,
+    options: options.map((option) => {
+      return { name: option };
+    }),
     args: args,
   };
 
-  const result = await fetch("/run", {
-    method: "post",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(body),
-  });
-  const data = await result.json();
-  console.log({ data });
+  console.log({ body });
+  try {
+    const result = await fetch("/run", {
+      method: "post",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
+    });
+    if (!result.ok) {
+      throw new Error("An error occurred");
+    }
+    const data = await result.json();
+    if (!data.result) {
+      throw new Error(data.error);
+    }
+    renderOutput(data.result);
+  } catch (error: any) {
+    renderOutput([error.message]);
+  }
 }
 
 function handleCommandOptionChange(event: Event) {

@@ -1,30 +1,46 @@
 import { Request, Response } from "express";
 import { spawn } from "child_process";
 
+type Option = { name: string };
+
 export async function runCommandController(req: Request, res: Response) {
   const body = req.body;
   const command = body.command;
-  const options = body.options;
+  const options: Option[] = body.options;
+  const args = body.args;
   if (!command) {
     res.status(400).json({ error: "No command provided" });
     return;
   }
   try {
-    const result = await runShellCommand(command, options);
+    const result = await runShellCommand(command, args, options);
     if (typeof result !== "string") {
       throw result;
     }
     res.json({ result: result.trim().split("\n") });
   } catch (error: any) {
-    res.status(500).json({ error: error.message });
+    res.json({ error: error.message });
   }
 }
 
-async function runShellCommand(command: string, options: string[]) {
+async function runShellCommand(
+  command: string,
+  args: string,
+  options: Option[]
+) {
   return new Promise<string | Error>((resolve, reject) => {
     const formattedOptions: string[] =
-      options.length > 0 ? ["-" + options.join("")] : [];
-    console.log({ command, options, formattedOptions });
+      options.length > 0
+        ? [
+            options.reduce((prev, current) => {
+              return prev + current.name;
+            }, "-"),
+          ]
+        : [];
+    if (args) {
+      formattedOptions.push(args);
+    }
+    console.log({ command, args, options, formattedOptions });
 
     const child = spawn(command, formattedOptions);
     let stdout = "";
@@ -34,6 +50,9 @@ async function runShellCommand(command: string, options: string[]) {
     });
     child.stderr.on("data", (data: string) => {
       stderr += data;
+    });
+    child.on("error", (error: Error) => {
+      reject(error);
     });
     child.on("close", (code: number) => {
       console.log("Closing");
