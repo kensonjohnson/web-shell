@@ -56,6 +56,7 @@ form {
   padding: 1rem;
   border-radius: 0.25rem;
   min-width: 320px;
+  height: fit-content;
 }
 
 label {
@@ -67,9 +68,17 @@ label {
   flex-direction: column;
   gap: 0.5em;
   padding: 1rem;
+  max-height: calc(100vh - 4rem);
   padding-top: 0.25rem;
   border: solid 2px var(--orange);
   border-radius: 0.25rem;
+  max-width: 960px;
+  overflow: scroll;
+}
+
+pre {
+  white-space: pre-wrap;
+  word-wrap: break-word;
 }
 
 #command-arguments {

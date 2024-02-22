@@ -226,7 +226,13 @@ function renderOutput(output: string[]) {
   header.textContent = "Command Output:";
   outputContainer.appendChild(header);
   const pre = document.createElement("pre");
-  pre.textContent = output.join("\n");
+  pre.textContent = output
+    .map((line) => {
+      const trimmed = line.trim();
+      if (trimmed.length === 0) return "";
+      return trimmed;
+    })
+    .join("\n");
   outputContainer.appendChild(pre);
 }
 
@@ -269,6 +275,7 @@ async function handleSubmit(event: SubmitEvent) {
       throw new Error(data.error);
     }
     renderOutput(data.result);
+    console.log({ data });
   } catch (error: any) {
     renderOutput([error.message]);
   }
