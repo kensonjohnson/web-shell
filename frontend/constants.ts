@@ -26,14 +26,6 @@ export const COMMAND_OPTIONS_MAP: CommandOptionsMap = {
       },
     },
   },
-  cat: {
-    acceptsArguments: true,
-    requiresArguments: true,
-    options: {
-      n: { acceptsArguments: false, description: "Add number lines" },
-      s: { acceptsArguments: false, description: "Remove extra spaces" },
-    },
-  },
   ps: {
     acceptsArguments: false,
     requiresArguments: false,
