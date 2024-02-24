@@ -5,6 +5,7 @@ export type CommandOptionsMap = {
 export type Command = {
   acceptsArguments: boolean;
   requiresArguments: boolean;
+  arguments?: string[];
   options: Record<string, Option>;
 };
 
@@ -26,14 +27,6 @@ export const COMMAND_OPTIONS_MAP: CommandOptionsMap = {
       },
     },
   },
-  cat: {
-    acceptsArguments: true,
-    requiresArguments: true,
-    options: {
-      n: { acceptsArguments: false, description: "Add number lines" },
-      s: { acceptsArguments: false, description: "Remove extra spaces" },
-    },
-  },
   ps: {
     acceptsArguments: false,
     requiresArguments: false,
@@ -51,6 +44,15 @@ export const COMMAND_OPTIONS_MAP: CommandOptionsMap = {
         acceptsArguments: false,
         description: "Show full (verbose) listing",
       },
+    },
+  },
+  multipass: {
+    acceptsArguments: true,
+    requiresArguments: false,
+    arguments: ["launch", "delete", "start", "stop"],
+    options: {
+      h: { acceptsArguments: false, description: "Show help" },
+      v: { acceptsArguments: false, description: "Verbose output" },
     },
   },
 };

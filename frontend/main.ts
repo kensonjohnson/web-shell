@@ -50,6 +50,20 @@ form.appendChild(submitButton);
 document.body.appendChild(form);
 
 // **********************************
+// * Create Output Container
+// **********************************
+
+const outputContainer = document.createElement("div");
+outputContainer.id = "output-container";
+const header = document.createElement("h2");
+header.textContent = "Run command to see output here...";
+outputContainer.appendChild(header);
+const pre = document.createElement("pre");
+pre.textContent = "";
+outputContainer.appendChild(pre);
+document.body.appendChild(outputContainer);
+
+// **********************************
 // * Helper Functions
 // **********************************
 
@@ -138,6 +152,11 @@ function renderOptions(command: Command, elementId: string) {
     optionElement.textContent = `-${option} ${description}`;
     optionsSelect.appendChild(optionElement);
   });
+
+  // Handle case where no options are available
+  if (optionsSelect.size === 0) {
+    optionsSelect.size = 1;
+  }
 }
 
 function renderArguments(
@@ -202,6 +221,41 @@ function renderInputs(event: Event, optionsMap: Record<string, Option>) {
   });
 }
 
+function renderOutput(output: string[]) {
+  const outputContainer = document.getElementById("output-container");
+  if (!outputContainer) return;
+  if (outputContainer.innerHTML === "") {
+    const header = document.createElement("h2");
+    header.textContent = "Output:";
+    outputContainer.appendChild(header);
+    const pre = document.createElement("pre");
+    pre.textContent = "";
+    outputContainer.appendChild(pre);
+  }
+
+  const header = outputContainer.querySelector("h2") as HTMLHeadingElement;
+  header.textContent = "Output:";
+
+  const pre = outputContainer.querySelector("pre") as HTMLPreElement;
+  pre.textContent =
+    pre.textContent +
+    "\n" +
+    output
+      .map((line) => {
+        const trimmed = line.trim();
+        if (trimmed.length === 0) return "";
+        return trimmed;
+      })
+      .join("\n")
+      .replaceAll("\x1b[2K", "")
+      .replaceAll("\x1b[0A", "")
+      .replaceAll("\x1b[0E", "")
+      .trim();
+
+  // Scroll to bottom of output
+  outputContainer.scrollTop = outputContainer.scrollHeight;
+}
+
 // **********************************
 // * Event Handlers
 // **********************************
@@ -218,19 +272,42 @@ async function handleSubmit(event: SubmitEvent) {
   if (!command) return;
   const body = {
     command,
-    options,
+    options: options.map((option) => {
+      return { name: option };
+    }),
     args: args,
   };
 
-  const result = await fetch("/run", {
-    method: "post",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(body),
-  });
-  const data = await result.json();
-  console.log({ data });
+  try {
+    const button = formRef.querySelector("button");
+    if (button) {
+      button.disabled = true;
+      button.textContent = "Running Command...";
+    }
+    const eventSource = await fetch("/run", {
+      method: "post",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
+    });
+    const reader = eventSource.body
+      ?.pipeThrough(new TextDecoderStream())
+      .getReader();
+    while (true) {
+      const { done, value } = await reader!.read();
+      if (done) {
+        break;
+      }
+      renderOutput(value.split("\n"));
+    }
+    if (button) {
+      button.disabled = false;
+      button.textContent = "Run Command";
+    }
+  } catch (error: any) {
+    renderOutput([error.message]);
+  }
 }
 
 function handleCommandOptionChange(event: Event) {
