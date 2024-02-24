@@ -13,11 +13,11 @@ export async function runCommandController(req: Request, res: Response) {
     return;
   }
   try {
-    const result = await runShellCommand(command, args, options);
+    const result = await runShellCommand(command, args, options, res);
     if (typeof result !== "string") {
       throw result;
     }
-    res.json({ result: result.trim().split("\n") });
+    // res.json({ result: result.trim().split("\n") });
   } catch (error: any) {
     res.json({ error: error.message });
   }
@@ -26,7 +26,8 @@ export async function runCommandController(req: Request, res: Response) {
 async function runShellCommand(
   command: string,
   args: string,
-  options: Option[]
+  options: Option[],
+  res: Response
 ) {
   return new Promise<string | Error>((resolve, reject) => {
     const formattedOptions: string[] =
@@ -38,14 +39,16 @@ async function runShellCommand(
           ]
         : [];
     if (args) {
-      formattedOptions.push(args);
+      args.split(" ").forEach((arg) => {
+        formattedOptions.push(arg);
+      });
     }
-    console.log({ command, args, options, formattedOptions });
 
     const child = spawn(command, formattedOptions);
     let stdout = "";
     let stderr = "";
     child.stdout.on("data", (data: string) => {
+      res.write(data);
       stdout += data;
     });
     child.stderr.on("data", (data: string) => {
@@ -55,8 +58,9 @@ async function runShellCommand(
       reject(error);
     });
     child.on("close", (code: number) => {
-      console.log("Closing");
       if (code === 0) {
+        res.write("\n\n");
+        res.end();
         resolve(stdout);
       } else {
         reject(new Error(stderr));
