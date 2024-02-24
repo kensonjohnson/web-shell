@@ -58,6 +58,9 @@ outputContainer.id = "output-container";
 const header = document.createElement("h2");
 header.textContent = "Run command to see output here...";
 outputContainer.appendChild(header);
+const pre = document.createElement("pre");
+pre.textContent = "";
+outputContainer.appendChild(pre);
 document.body.appendChild(outputContainer);
 
 // **********************************
@@ -221,19 +224,36 @@ function renderInputs(event: Event, optionsMap: Record<string, Option>) {
 function renderOutput(output: string[]) {
   const outputContainer = document.getElementById("output-container");
   if (!outputContainer) return;
-  outputContainer.innerHTML = "";
-  const header = document.createElement("h2");
-  header.textContent = "Command Output:";
-  outputContainer.appendChild(header);
-  const pre = document.createElement("pre");
-  pre.textContent = output
-    .map((line) => {
-      const trimmed = line.trim();
-      if (trimmed.length === 0) return "";
-      return trimmed;
-    })
-    .join("\n");
-  outputContainer.appendChild(pre);
+  if (outputContainer.innerHTML === "") {
+    const header = document.createElement("h2");
+    header.textContent = "Output:";
+    outputContainer.appendChild(header);
+    const pre = document.createElement("pre");
+    pre.textContent = "";
+    outputContainer.appendChild(pre);
+  }
+
+  const header = outputContainer.querySelector("h2") as HTMLHeadingElement;
+  header.textContent = "Output:";
+
+  const pre = outputContainer.querySelector("pre") as HTMLPreElement;
+  pre.textContent =
+    pre.textContent +
+    "\n" +
+    output
+      .map((line) => {
+        const trimmed = line.trim();
+        if (trimmed.length === 0) return "";
+        return trimmed;
+      })
+      .join("\n")
+      .replaceAll("\x1b[2K", "")
+      .replaceAll("\x1b[0A", "")
+      .replaceAll("\x1b[0E", "")
+      .trim();
+
+  // Scroll to bottom of output
+  outputContainer.scrollTop = outputContainer.scrollHeight;
 }
 
 // **********************************
@@ -258,24 +278,39 @@ async function handleSubmit(event: SubmitEvent) {
     args: args,
   };
 
-  console.log({ body });
   try {
-    const result = await fetch("/run", {
+    // const result = await fetch("/run", {
+    //   method: "post",
+    //   headers: {
+    //     "Content-Type": "application/json",
+    //   },
+    //   body: JSON.stringify(body),
+    // });
+    // if (!result.ok) {
+    //   throw new Error("An error occurred");
+    // }
+    // const data = await result.json();
+    // if (!data.result) {
+    //   throw new Error(data.error);
+    // }
+    // renderOutput(data.result);
+    const eventSource = await fetch("/run", {
       method: "post",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify(body),
     });
-    if (!result.ok) {
-      throw new Error("An error occurred");
+    const reader = eventSource.body
+      ?.pipeThrough(new TextDecoderStream())
+      .getReader();
+    while (true) {
+      const { done, value } = await reader!.read();
+      if (done) {
+        break;
+      }
+      renderOutput(value.split("\n"));
     }
-    const data = await result.json();
-    if (!data.result) {
-      throw new Error(data.error);
-    }
-    renderOutput(data.result);
-    console.log({ data });
   } catch (error: any) {
     renderOutput([error.message]);
   }
