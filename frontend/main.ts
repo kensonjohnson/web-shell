@@ -279,21 +279,11 @@ async function handleSubmit(event: SubmitEvent) {
   };
 
   try {
-    // const result = await fetch("/run", {
-    //   method: "post",
-    //   headers: {
-    //     "Content-Type": "application/json",
-    //   },
-    //   body: JSON.stringify(body),
-    // });
-    // if (!result.ok) {
-    //   throw new Error("An error occurred");
-    // }
-    // const data = await result.json();
-    // if (!data.result) {
-    //   throw new Error(data.error);
-    // }
-    // renderOutput(data.result);
+    const button = formRef.querySelector("button");
+    if (button) {
+      button.disabled = true;
+      button.textContent = "Running Command...";
+    }
     const eventSource = await fetch("/run", {
       method: "post",
       headers: {
@@ -310,6 +300,10 @@ async function handleSubmit(event: SubmitEvent) {
         break;
       }
       renderOutput(value.split("\n"));
+    }
+    if (button) {
+      button.disabled = false;
+      button.textContent = "Run Command";
     }
   } catch (error: any) {
     renderOutput([error.message]);
